@@ -1,0 +1,73 @@
+{
+  "modelo": "XGBoost",
+  "conjunto_variables": "Base + vegetación",
+  "predictores": [
+    "tmin_media_2020_c",
+    "tmax_media_2020_c",
+    "prec_total_2020_mm",
+    "elevacion_m",
+    "ph_suelo_0_5cm",
+    "carbono_organico_g_kg_0_5cm",
+    "arcilla_pct_0_5cm",
+    "arena_pct_0_5cm",
+    "cec_cmol_kg_0_5cm",
+    "x",
+    "y",
+    "ndvi_media_2020",
+    "ndvi_p90_2020",
+    "ndvi_amplitud_2020",
+    "evi_media_2020",
+    "evi_amplitud_2020",
+    "fraccion_cultivo_2020"
+  ],
+  "hiperparametros": {
+    "subsample": 0.7,
+    "reg_lambda": 1.0,
+    "reg_alpha": 1.0,
+    "n_estimators": 550,
+    "min_child_weight": 1,
+    "max_depth": 6,
+    "learning_rate": 0.01,
+    "gamma": 0.05,
+    "colsample_bytree": 1.0
+  },
+  "validacion": {
+    "tipo": "Nested spatial cross-validation",
+    "grupos": "floor(x)_floor(y)",
+    "outer_folds": 5,
+    "inner_folds": 4,
+    "random_search_iter_por_fold": 12,
+    "metrica_optimizacion": "MAE"
+  },
+  "metricas_OOF": {
+    "MAE_t_ha": 7.2550368804433285,
+    "RMSE_t_ha": 11.99413126760413,
+    "R2": 0.2155378079595911
+  },
+  "n_observaciones": 1983,
+  "n_grupos_espaciales": 69,
+  "experimento": "Etapa 2 - dataset enriquecido",
+  "variables_enriquecidas_evaluadas": {
+    "vegetacion": [
+      "ndvi_media_2020",
+      "ndvi_p90_2020",
+      "ndvi_amplitud_2020",
+      "evi_media_2020",
+      "evi_amplitud_2020",
+      "fraccion_cultivo_2020"
+    ],
+    "topografia": [
+      "srtm_elev_m_stdDev",
+      "slope_deg_mean",
+      "slope_deg_stdDev",
+      "northness_mean",
+      "eastness_mean"
+    ],
+    "clima_dinamico": [
+      "prec_cv_2020",
+      "tmax_std_mensual_2020_c",
+      "tmin_std_mensual_2020_c",
+      "rango_diurno_medio_2020_c"
+    ]
+  }
+}
