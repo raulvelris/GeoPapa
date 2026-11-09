@@ -56,8 +56,8 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     respuesta: str = Field(..., description="Respuesta en lenguaje natural del asistente")
-    conversation_id: int = Field(
-        ..., description="ID persistente de la conversación en SQLite."
+    conversation_id: Optional[int] = Field(
+        None, description="ID SQLite en modo local; null en modo público sin persistencia."
     )
     grid_codes_relacionados: List[int] = Field(
         default_factory=list,

@@ -25,7 +25,7 @@ import os
 from typing import Literal, Optional
 
 import config  # noqa: F401  (garantiza que .env se cargue antes de leer ALLOWED_ORIGINS)
-from fastapi import FastAPI, Path, Query
+from fastapi import FastAPI, HTTPException, Path, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -88,6 +88,17 @@ app.add_middleware(
 
 # Crea las tablas de historial si aún no existen. No toca el dataset ni el modelo.
 database_service.init_db()
+
+# Modo público: no guardar conversaciones en SQLite ni permitir leer el
+# historial compartido. El modo local original permanece sin cambios.
+PUBLIC_CHAT_MODE = os.getenv("PUBLIC_CHAT_MODE", "false").lower() in ("1", "true", "yes")
+
+def _require_private_history():
+    if PUBLIC_CHAT_MODE:
+        raise HTTPException(
+            status_code=403,
+            detail="El historial compartido está desactivado en la versión pública.",
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -264,6 +275,20 @@ def chat(body: ChatRequest):
       anteriores; al iniciar una conversación nueva se persiste como semilla.
     - El LLM sigue sin acceder al CSV/DataFrame directamente.
     """
+    if PUBLIC_CHAT_MODE:
+        # Modo sin persistencia: el cliente proporciona solamente sus propios
+        # mensajes anteriores dentro de esta sesión del navegador.
+        if body.conversation_id is not None:
+            raise HTTPException(status_code=400, detail="No se admiten IDs de conversación en modo público.")
+        if len(body.mensaje) > 1200:
+            raise HTTPException(status_code=422, detail="Máximo 1200 caracteres por pregunta.")
+        resultado = chat_service.procesar_mensaje(
+            mensaje=body.mensaje,
+            grid_code_contexto=body.grid_code_contexto,
+            historial=[turno.model_dump() for turno in body.historial],
+        )
+        return {**resultado, "conversation_id": None}
+
     if body.conversation_id is None:
         conversation_id = database_service.crear_conversacion()
         historial = [turno.model_dump() for turno in body.historial]
@@ -321,6 +346,7 @@ def chat(body: ChatRequest):
 )
 def crear_conversacion():
     """Crea una conversación vacía. `/chat` también puede crearla automáticamente."""
+    _require_private_history()
     return {"conversation_id": database_service.crear_conversacion()}
 
 
@@ -333,6 +359,7 @@ def listar_conversaciones(
     limite: int = Query(50, gt=0, le=200, description="Máximo de conversaciones"),
 ):
     """Lista conversaciones recientes, ordenadas por última actividad."""
+    _require_private_history()
     return database_service.listar_conversaciones(limite=limite)
 
 
@@ -345,6 +372,7 @@ def obtener_conversacion(
     conversation_id: int = Path(..., gt=0, description="ID de conversación"),
 ):
     """Devuelve todos los mensajes persistidos de una conversación."""
+    _require_private_history()
     return database_service.obtener_conversacion(conversation_id)
 
 
@@ -357,5 +385,6 @@ def eliminar_conversacion(
     conversation_id: int = Path(..., gt=0, description="ID de conversación"),
 ):
     """Elimina una conversación y sus mensajes mediante ON DELETE CASCADE."""
+    _require_private_history()
     database_service.eliminar_conversacion(conversation_id)
     return {"eliminado": True, "conversation_id": conversation_id}

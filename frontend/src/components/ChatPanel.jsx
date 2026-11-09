@@ -6,6 +6,10 @@ import {
     obtenerConversacion,
 } from "../services/api";
 
+// En la web pública los mensajes viven solo en esta pestaña.
+// No se muestra ni consulta una base de datos compartida de conversaciones.
+const MODO_CHAT_PUBLICO = import.meta.env.VITE_PUBLIC_CHAT_MODE === "true";
+
 function ChatPanel({ zona }) {
     const [mensajes, setMensajes] = useState([]);
     const [texto, setTexto] = useState("");
@@ -45,8 +49,11 @@ function ChatPanel({ zona }) {
         try {
         const respuesta = await enviarMensajeChat({
             mensaje,
-            conversation_id: conversationId,
+            conversation_id: MODO_CHAT_PUBLICO ? null : conversationId,
             grid_code_contexto: zona.grid_code,
+            ...(MODO_CHAT_PUBLICO ? {
+              historial: mensajes.map(({ role, content }) => ({ role, content })),
+            } : {}),
         });
 
         if (!conversationId && respuesta.conversation_id) {
@@ -127,9 +134,11 @@ async function abrirConversacion(id) {
                     + Nueva
                 </button>
 
-                <button type="button" onClick={cargarHistorial}>
+                {!MODO_CHAT_PUBLICO && (
+                  <button type="button" onClick={cargarHistorial}>
                     Historial
-                </button>
+                  </button>
+                )}
                 </div>              
             </div>
         </div>
