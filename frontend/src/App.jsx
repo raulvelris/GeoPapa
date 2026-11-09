@@ -49,7 +49,7 @@ function App() {
   const [panelMovil, setPanelMovil] = useState("resumen");
   const [leyendaAbierta, setLeyendaAbierta] = useState(false);
   const inicioArrastre = useRef(null);
-  const omitirClicTrasArrastre = useRef(false);
+  const [alturaArrastre, setAlturaArrastre] = useState(null);
 
   function esPantallaMovil() {
     return typeof window !== "undefined" &&
@@ -79,40 +79,56 @@ function App() {
     }
   }
 
+  // Se puede tomar la ficha por cualquier punto de su cabecera, no solo el asa.
+  // El mapa mantiene su desplazamiento y zoom táctil de forma independiente.
   function alIniciarArrastre(evento) {
+    if (!esPantallaMovil()) return;
     if (evento.pointerType === "mouse" && evento.button !== 0) return;
-    inicioArrastre.current = evento.clientY;
+    if (evento.target.closest(".mobile-summary-close")) return;
+
+    const panel = evento.currentTarget.closest(".side-panel");
+    inicioArrastre.current = {
+      pointerId: evento.pointerId,
+      inicioY: evento.clientY,
+      altoInicial: panel?.getBoundingClientRect().height || 156,
+    };
     evento.currentTarget.setPointerCapture?.(evento.pointerId);
   }
 
+  function alMoverArrastre(evento) {
+    const gesto = inicioArrastre.current;
+    if (!gesto || gesto.pointerId !== evento.pointerId) return;
+    const delta = evento.clientY - gesto.inicioY;
+    if (Math.abs(delta) < 6) return;
+
+    const altoMinimo = 110;
+    const altoMaximo = window.innerHeight * 0.92;
+    setAlturaArrastre(
+      Math.max(altoMinimo, Math.min(altoMaximo, gesto.altoInicial - delta))
+    );
+  }
+
   function alTerminarArrastre(evento) {
-    if (inicioArrastre.current === null) return;
-    const desplazamiento = evento.clientY - inicioArrastre.current;
+    const gesto = inicioArrastre.current;
+    if (!gesto || gesto.pointerId !== evento.pointerId) return;
     inicioArrastre.current = null;
-    if (Math.abs(desplazamiento) < 35) return;
-    // Evita que el clic que sigue al gesto deshaga el cambio de posición.
-    omitirClicTrasArrastre.current = true;
-    if (desplazamiento < 0) {
-      setPanelMovil((actual) =>
-        actual === "resumen" ? "detalles" :
-        actual === "detalles" && chatAbierto ? "chat" : actual
-      );
-    } else {
-      setPanelMovil((actual) =>
-        actual === "chat" ? "detalles" : "resumen"
-      );
+    setAlturaArrastre(null);
+
+    const delta = evento.clientY - gesto.inicioY;
+    if (Math.abs(delta) < 40) return;
+
+    if (delta < 0 && panelMovil === "resumen") {
+      setPanelMovil("detalles");
+    } else if (delta > 0 && panelMovil === "detalles") {
+      setPanelMovil("resumen");
+    } else if (delta > 0 && panelMovil === "chat") {
+      setPanelMovil("detalles");
     }
   }
 
-  function alPulsarAsa() {
-    if (omitirClicTrasArrastre.current) {
-      omitirClicTrasArrastre.current = false;
-      return;
-    }
-    setPanelMovil((actual) =>
-      actual === "chat" ? "detalles" :
-      actual === "resumen" ? "detalles" : "resumen"
-    );
+  function alCancelarArrastre() {
+    inicioArrastre.current = null;
+    setAlturaArrastre(null);
   }
 
   useEffect(() => {
@@ -316,26 +332,21 @@ function App() {
 
         <aside
           className={`side-panel ${zonaSeleccionada ? `mobile-sheet-${panelMovil}` : "mobile-sheet-empty"}`}
+          style={alturaArrastre === null ? undefined : { height: `${alturaArrastre}px`, transition: "none" }}
           aria-label="Información de la zona"
         >
           {zonaSeleccionada && (
-            <div className="mobile-sheet-top">
-              <button
-                type="button"
-                className="mobile-sheet-grip"
-                aria-label={
-                  panelMovil === "chat" ? "Volver a los detalles" :
-                  panelMovil === "resumen" ? "Expandir panel de información" :
-                  "Minimizar panel de información"
-                }
-                aria-expanded={panelMovil !== "resumen"}
-                onPointerDown={alIniciarArrastre}
-                onPointerUp={alTerminarArrastre}
-                onPointerCancel={() => { inicioArrastre.current = null; }}
-                onClick={alPulsarAsa}
-              >
-                <span aria-hidden="true" />
-              </button>
+            <div
+              className="mobile-sheet-top"
+              onPointerDown={alIniciarArrastre}
+              onPointerMove={alMoverArrastre}
+              onPointerUp={alTerminarArrastre}
+              onPointerCancel={alCancelarArrastre}
+              onLostPointerCapture={alCancelarArrastre}
+            >
+              <div className="mobile-sheet-grip" aria-hidden="true">
+                <span />
+              </div>
               <div className="mobile-sheet-summary">
                 <div className="mobile-summary-location">
                   <span>Zona {zonaSeleccionada.grid_code}</span>
@@ -351,11 +362,9 @@ function App() {
                   onClick={cerrarZona}
                   aria-label="Cerrar zona seleccionada"
                 >×</button>
-                <button
-                  type="button"
-                  className="mobile-summary-expand"
-                  onClick={() => setPanelMovil("detalles")}
-                >Ver información <span aria-hidden="true">↑</span></button>
+                <div className="mobile-summary-expand" aria-hidden="true">
+                  Ver información <span>↑</span>
+                </div>
               </div>
             </div>
           )}

@@ -856,7 +856,14 @@
     display: block;
     flex: 0 0 auto;
     padding: 0 13px;
+    touch-action: none; /* gestos verticales sobre toda la ficha */
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: grab;
   }
+
+  .mobile-sheet-top:active { cursor: grabbing; }
+  .mobile-summary-close { touch-action: manipulation; }
 
   .mobile-sheet-grip {
     display: flex;
@@ -867,11 +874,11 @@
     padding: 0;
     border: 0;
     background: transparent;
-    cursor: grab;
-    touch-action: none; /* solo el asa captura el deslizamiento */
+    cursor: inherit;
+    touch-action: none;
   }
 
-  .mobile-sheet-grip:active { cursor: grabbing; }
+  .mobile-sheet-grip:active { cursor: inherit; }
   .mobile-sheet-grip span {
     width: 45px;
     height: 5px;
@@ -879,9 +886,7 @@
     background: #cbd5e1;
   }
 
-  .mobile-sheet-grip:focus-visible,
-  .mobile-summary-close:focus-visible,
-  .mobile-summary-expand:focus-visible {
+  .mobile-summary-close:focus-visible {
     outline: 2px solid #2563eb;
     outline-offset: 2px;
   }
@@ -946,15 +951,18 @@
   .mobile-summary-expand {
     grid-column: 1 / -1;
     justify-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     height: 34px;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
     background: #f8fafc;
-    color: #263746;
+    color: #475569;
     font-weight: 600;
     font-size: 12px;
-    cursor: pointer;
+    pointer-events: none; /* indicación, nunca botón */
   }
+  .mobile-summary-expand span { margin-left: 5px; }
 
   .mobile-sheet-detalles .mobile-summary-expand,
   .mobile-sheet-chat .mobile-sheet-summary {
@@ -1105,4 +1113,40 @@
 
 @media (prefers-reduced-motion: reduce) {
   .side-panel { transition: none; }
+}
+
+/* Historial es una vista alternativa al chat, no un panel apilado. */
+.chat-screen-hidden { display: none !important; }
+.chat-history.chat-history-view {
+  min-height: 190px;
+  max-height: 360px;
+  overflow-y: auto;
+  border-bottom: 0;
+  padding: 12px;
+  background: #f8fafc;
+}
+.chat-actions button[aria-pressed="true"] {
+  background: #e9f0f6;
+  color: #263746;
+  border-color: #b8c8d5;
+}
+@media (max-width: 767px) {
+  .mobile-sheet-chat .chat-history.chat-history-view {
+    display: block;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    padding: 15px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mobile-sheet-chat .chat-history-view > button {
+    min-height: 52px;
+    padding: 12px;
+    margin-bottom: 9px;
+  }
+  .mobile-sheet-chat .chat-history-view strong { font-size: 13px; }
+  .mobile-sheet-chat .chat-history-view small { font-size: 11px; }
+  .mobile-sheet-chat .chat-screen-hidden { display: none !important; }
 }

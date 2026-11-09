@@ -22,10 +22,10 @@ function ChatPanel({ zona }) {
     const finChatRef = useRef(null);
 
     useEffect(() => {
-        finChatRef.current?.scrollIntoView({
-        behavior: "smooth",
-        });
-    }, [mensajes, enviando]);
+        if (!historialAbierto) {
+            finChatRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [mensajes, enviando, historialAbierto]);
 
     async function enviar(event) {
         event.preventDefault();
@@ -80,6 +80,11 @@ function ChatPanel({ zona }) {
   }
 
 async function cargarHistorial() {
+    if (historialAbierto) {
+        setHistorialAbierto(false);
+        return;
+    }
+    setError("");
     try {
         const datos = await listarConversaciones();
         setConversaciones(datos);
@@ -135,8 +140,12 @@ async function abrirConversacion(id) {
                 </button>
 
                 {!MODO_CHAT_PUBLICO && (
-                  <button type="button" onClick={cargarHistorial}>
-                    Historial
+                  <button
+                    type="button"
+                    onClick={cargarHistorial}
+                    aria-pressed={historialAbierto}
+                  >
+                    {historialAbierto ? "Volver al chat" : "Historial"}
                   </button>
                 )}
                 </div>              
@@ -144,7 +153,7 @@ async function abrirConversacion(id) {
         </div>
 
         {historialAbierto && (
-        <div className="chat-history">
+        <div className="chat-history chat-history-view">
             <div className="chat-history-title">
             Conversaciones anteriores
             </div>
@@ -166,7 +175,7 @@ async function abrirConversacion(id) {
         </div>
         )}
 
-        <div className="chat-messages">
+        <div className={`chat-messages ${historialAbierto ? "chat-screen-hidden" : ""}`}>
             {mensajes.length === 0 && (
             <div className="chat-welcome">
                 <strong>¿Qué deseas conocer?</strong>
@@ -263,7 +272,7 @@ async function abrirConversacion(id) {
             </div>
         )}
 
-        <form className="chat-form" onSubmit={enviar}>
+        <form className={`chat-form ${historialAbierto ? "chat-screen-hidden" : ""}`} onSubmit={enviar}>
             <textarea
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
