@@ -4,6 +4,7 @@ import {
     enviarMensajeChat,
     listarConversaciones,
     obtenerConversacion,
+    eliminarConversacion,
 } from "../services/api";
 
 // En la web pública los mensajes viven solo en esta pestaña.
@@ -18,6 +19,8 @@ function ChatPanel({ zona }) {
     const [error, setError] = useState("");
     const [historialAbierto, setHistorialAbierto] = useState(false);
     const [conversaciones, setConversaciones] = useState([]);
+    const [idPorEliminar, setIdPorEliminar] = useState(null);
+    const [eliminandoId, setEliminandoId] = useState(null);
 
     const finChatRef = useRef(null);
 
@@ -82,9 +85,11 @@ function ChatPanel({ zona }) {
 async function cargarHistorial() {
     if (historialAbierto) {
         setHistorialAbierto(false);
+        setIdPorEliminar(null);
         return;
     }
     setError("");
+    setIdPorEliminar(null);
     try {
         const datos = await listarConversaciones();
         setConversaciones(datos);
@@ -101,6 +106,7 @@ function nuevaConversacion() {
     setTexto("");
     setError("");
     setHistorialAbierto(false);
+    setIdPorEliminar(null);
 }
 
 async function abrirConversacion(id) {
@@ -118,9 +124,37 @@ async function abrirConversacion(id) {
         );
 
         setHistorialAbierto(false);
+        setIdPorEliminar(null);
     } catch (err) {
         console.error(err);
         setError("No se pudo abrir la conversación.");
+    }
+}
+
+async function confirmarEliminacion(id) {
+    if (eliminandoId !== null || enviando) return;
+    setEliminandoId(id);
+    setError("");
+
+    try {
+        // FastAPI ya incluye DELETE /conversaciones/{id} y SQLite elimina
+        // sus mensajes mediante ON DELETE CASCADE.
+        await eliminarConversacion(id);
+        setConversaciones((actuales) => actuales.filter((c) => c.id !== id));
+        setIdPorEliminar(null);
+
+        // Si era la conversación abierta, evitar que el usuario continúe
+        // sobre un ID que ya no existe en el servidor.
+        if (conversationId === id) {
+            setConversationId(null);
+            setMensajes([]);
+            setTexto("");
+        }
+    } catch (err) {
+        console.error(err);
+        setError("No se pudo eliminar la conversación. Vuelve a intentarlo.");
+    } finally {
+        setEliminandoId(null);
     }
 }
 
@@ -162,14 +196,58 @@ async function abrirConversacion(id) {
             <p>No hay conversaciones guardadas.</p>
             ) : (
             conversaciones.slice(0, 10).map((conv) => (
-                <button
-                key={conv.id}
-                type="button"
-                onClick={() => abrirConversacion(conv.id)}
-                >
-                <strong>{conv.titulo || `Conversación ${conv.id}`}</strong>
-                <small>#{conv.id}</small>
-                </button>
+                <div className="chat-history-row" key={conv.id}>
+                    <button
+                        className="chat-history-open"
+                        type="button"
+                        disabled={eliminandoId !== null}
+                        onClick={() => abrirConversacion(conv.id)}
+                    >
+                        <strong title={conv.titulo || `Conversación ${conv.id}`}>
+                            {conv.titulo || `Conversación ${conv.id}`}
+                        </strong>
+                        <small>#{conv.id}</small>
+                    </button>
+
+                    {idPorEliminar !== conv.id && (
+                        <button
+                            className="chat-history-delete"
+                            type="button"
+                            disabled={enviando || eliminandoId !== null}
+                            aria-label={`Eliminar conversación ${conv.id}`}
+                            title="Eliminar conversación"
+                            onClick={() => {
+                                setIdPorEliminar(conv.id);
+                                setError("");
+                            }}
+                        >
+                            <span aria-hidden="true">×</span>
+                        </button>
+                    )}
+
+                    {idPorEliminar === conv.id && (
+                        <div className="chat-history-confirm" role="group" aria-label={`Confirmar eliminación de conversación ${conv.id}`}>
+                            <p>¿Eliminar definitivamente esta conversación y todos sus mensajes? Se borrará para todos y no se puede deshacer.</p>
+                            <div className="chat-history-confirm-actions">
+                                <button
+                                    type="button"
+                                    disabled={eliminandoId !== null}
+                                    onClick={() => setIdPorEliminar(null)}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    className="chat-history-confirm-delete"
+                                    type="button"
+                                    disabled={eliminandoId !== null || enviando}
+                                    onClick={() => confirmarEliminacion(conv.id)}
+                                >
+                                    {eliminandoId === conv.id ? "Eliminando..." : "Sí, eliminar"}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             ))
             )}
         </div>

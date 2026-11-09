@@ -1150,3 +1150,97 @@
   .mobile-sheet-chat .chat-history-view small { font-size: 11px; }
   .mobile-sheet-chat .chat-screen-hidden { display: none !important; }
 }
+
+
+/* Acciones del historial compartido: abrir o eliminar con confirmación. */
+.chat-history-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px;
+  align-items: stretch;
+  margin-bottom: 8px;
+}
+.chat-history-row .chat-history-open {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+.chat-history-open strong {
+  min-width: 0;
+  flex: 1;
+}
+.chat-history-row .chat-history-delete {
+  flex-shrink: 0;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #fecaca;
+  border-radius: 7px;
+  background: #fff7f7;
+  color: #991b1b;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 400;
+  cursor: pointer;
+}
+.chat-history-row .chat-history-delete:hover {
+  background: #fee2e2;
+}
+.chat-history-open:hover { background: #eef2f6; }
+.chat-history-row button:disabled { opacity: .55; cursor: not-allowed; }
+.chat-history-confirm {
+  grid-column: 1 / -1;
+  padding: 10px;
+  border: 1px solid #fecaca;
+  border-radius: 7px;
+  background: #fff7f7;
+}
+.chat-history-confirm p {
+  margin: 0 0 9px;
+  color: #7f1d1d;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.chat-history-confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.chat-history-confirm-actions button {
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  background: #fff;
+  color: #374151;
+  padding: 8px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.chat-history-confirm-actions .chat-history-confirm-delete {
+  border-color: #b91c1c;
+  background: #b91c1c;
+  color: #fff;
+  font-weight: 600;
+}
+@media (max-width: 767px) {
+  .mobile-sheet-chat .chat-history-row .chat-history-open {
+    min-height: 50px;
+    padding: 11px;
+  }
+  .mobile-sheet-chat .chat-history-row .chat-history-delete {
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+  }
+  .mobile-sheet-chat .chat-history-confirm p,
+  .mobile-sheet-chat .chat-history-confirm-actions button {
+    font-size: 12px;
+  }
+}
