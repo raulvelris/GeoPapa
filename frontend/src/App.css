@@ -643,3 +643,466 @@
   font-size: 10px;
   color: #94a3b8;
 }
+/* --------------------------------------------------------------
+   GeoPapa móvil: panel inferior de 3 estados.
+   Los estilos anteriores conservan la interfaz de escritorio.
+   -------------------------------------------------------------- */
+.legend-toggle,
+.mobile-sheet-top,
+.mobile-chat-nav,
+.chat-button-label-mobile {
+  display: none;
+}
+
+/* El estilo general del botón de chat también aplica a sus spans;
+   mantenemos el texto normal en escritorio. */
+.chat-button .chat-button-label-desktop {
+  display: block;
+  margin-top: 0;
+  font-size: inherit;
+  text-transform: none;
+}
+
+/* Tablets: conservar dos columnas y evitar el mapa de altura fija. */
+@media (min-width: 768px) and (max-width: 900px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+
+  .side-panel {
+    border-top: none;
+    border-left: 1px solid #e5e7eb;
+    padding: 17px;
+  }
+
+  .map {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  #root, .app {
+    height: 100%;
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  .app {
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .header {
+    padding: 10px 14px;
+    min-height: 69px;
+    gap: 8px;
+  }
+
+  .header h1 {
+    font-size: 16px;
+    line-height: 1.25;
+    margin: 0 0 3px;
+  }
+
+  .header p {
+    font-size: 10px;
+    line-height: 1.35;
+    max-width: 245px;
+  }
+
+  .header-stats {
+    display: flex;
+    gap: 0;
+    flex: 0 0 auto;
+  }
+
+  .header-stats span {
+    padding: 5px 7px;
+    border-radius: 8px;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+
+  .header-stats span:nth-child(2) { display: none; }
+  .header-stats small { font-size: 10px; }
+
+  .workspace {
+    display: block;
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .map-section {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .map-toolbar {
+    flex: 0 0 auto;
+    min-height: 54px;
+    padding: 7px 10px;
+    gap: 0;
+  }
+
+  .search-form {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .search-form input {
+    min-width: 0;
+    width: 100%;
+    flex: 1;
+    font-size: 16px; /* Evita zoom automático del teclado en iPhone */
+    padding: 10px 11px;
+  }
+
+  .search-form button {
+    flex: 0 0 auto;
+    min-height: 41px;
+    padding: 9px 15px;
+    font-size: 14px;
+  }
+
+  .map-status { display: none; }
+
+  .map-wrapper {
+    height: 100%;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .map {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .legend-toggle {
+    position: absolute;
+    display: block;
+    top: 12px;
+    right: 11px;
+    z-index: 1050;
+    padding: 9px 11px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: rgba(255,255,255,.97);
+    box-shadow: 0 2px 10px rgba(20, 30, 45, .12);
+    font-size: 12px;
+    color: #263746;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .legend-toggle span { font-size: 15px; margin-right: 3px; }
+
+  .legend {
+    display: none;
+    position: absolute;
+    top: 60px;
+    bottom: auto;
+    left: auto;
+    right: 11px;
+    z-index: 1050;
+    width: 161px;
+    max-height: min(48dvh, 310px);
+    overflow-y: auto;
+    padding: 11px 12px;
+  }
+
+  .legend.legend-open { display: block; }
+
+  /* Ocultamos el panel hasta que se seleccione una zona. */
+  .side-panel {
+    position: fixed;
+    z-index: 1400;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    max-width: none;
+    padding: 0;
+    background: #ffffff;
+    border: 1px solid #dfe5eb;
+    border-bottom: 0;
+    border-radius: 21px 21px 0 0;
+    box-shadow: 0 -8px 28px rgba(21, 36, 51, .20);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: height .23s ease;
+  }
+
+  .side-panel.mobile-sheet-empty {
+    display: none;
+  }
+
+  .side-panel.mobile-sheet-resumen {
+    height: calc(156px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .side-panel.mobile-sheet-detalles {
+    height: min(69dvh, 670px);
+  }
+
+  .side-panel.mobile-sheet-chat {
+    height: 88dvh;
+    max-height: calc(100dvh - 10px);
+  }
+
+  .mobile-sheet-top {
+    display: block;
+    flex: 0 0 auto;
+    padding: 0 13px;
+  }
+
+  .mobile-sheet-grip {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 29px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: grab;
+    touch-action: none; /* solo el asa captura el deslizamiento */
+  }
+
+  .mobile-sheet-grip:active { cursor: grabbing; }
+  .mobile-sheet-grip span {
+    width: 45px;
+    height: 5px;
+    border-radius: 99px;
+    background: #cbd5e1;
+  }
+
+  .mobile-sheet-grip:focus-visible,
+  .mobile-summary-close:focus-visible,
+  .mobile-summary-expand:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+
+  .mobile-sheet-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 31px;
+    gap: 9px;
+    align-items: center;
+    padding: 3px 0 10px;
+  }
+
+  .mobile-summary-location {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .mobile-summary-location span {
+    color: #64748b;
+    font-size: 11px;
+    letter-spacing: .025em;
+  }
+
+  .mobile-summary-location strong {
+    color: #1f2937;
+    font-size: 14px;
+    line-height: 1.28;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .mobile-summary-value {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .mobile-summary-value strong {
+    display: block;
+    color: #1f5132;
+    font-size: 21px;
+    line-height: 1.2;
+  }
+
+  .mobile-summary-value small { color: #64748b; font-size: 11px; }
+
+  .mobile-summary-close {
+    height: 32px;
+    width: 31px;
+    border: 0;
+    border-radius: 8px;
+    background: #f1f5f9;
+    font-size: 22px;
+    line-height: 1;
+    color: #475569;
+    cursor: pointer;
+  }
+
+  .mobile-summary-expand {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #263746;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .mobile-sheet-detalles .mobile-summary-expand,
+  .mobile-sheet-chat .mobile-sheet-summary {
+    display: none;
+  }
+
+  .mobile-sheet-resumen .mobile-sheet-top {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .mobile-sheet-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    padding: 7px 17px max(22px, env(safe-area-inset-bottom, 0px));
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-sheet-resumen .mobile-sheet-content { display: none; }
+
+  .mobile-sheet-content .panel-heading { display: none; }
+
+  .mobile-sheet-detalles .location-card,
+  .mobile-sheet-detalles .yield-card {
+    padding: 12px 14px;
+    margin-bottom: 9px;
+  }
+
+  .mobile-sheet-detalles .yield-card strong { font-size: 25px; }
+  .mobile-sheet-detalles .details { margin-top: 12px; }
+  .mobile-sheet-detalles .method-note { margin-top: 12px; }
+
+  .chat-button .chat-button-label-desktop { display: none; }
+  .chat-button .chat-button-label-mobile {
+    display: block;
+    margin-top: 0;
+    font-size: 14px;
+    text-transform: none;
+  }
+
+  .mobile-sheet-detalles .chat-button {
+    min-height: 45px;
+    margin-top: 13px;
+  }
+
+  /* Conserva ChatPanel montado al volver del chat para no perder mensajes. */
+  .mobile-sheet-detalles .chat-panel,
+  .mobile-sheet-detalles .mobile-chat-nav { display: none; }
+
+  .mobile-sheet-chat .mobile-sheet-top {
+    padding: 0 13px;
+  }
+
+  .mobile-sheet-chat .mobile-sheet-content {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .mobile-sheet-chat .mobile-sheet-content > .location-card,
+  .mobile-sheet-chat .mobile-sheet-content > .yield-card,
+  .mobile-sheet-chat .mobile-sheet-content > .details,
+  .mobile-sheet-chat .mobile-sheet-content > .method-note,
+  .mobile-sheet-chat .mobile-sheet-content > .chat-button,
+  .mobile-sheet-chat .mobile-sheet-content > .panel-heading {
+    display: none;
+  }
+
+  .mobile-sheet-chat .mobile-chat-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex: 0 0 auto;
+    padding: 9px 15px 13px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .mobile-chat-nav button {
+    border: 0;
+    background: #f1f5f9;
+    color: #263746;
+    padding: 9px 11px;
+    font-size: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .mobile-chat-nav button span { font-size: 18px; vertical-align: -1px; }
+  .mobile-chat-nav strong { color: #263746; font-size: 14px; }
+
+  .mobile-sheet-chat .chat-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .mobile-sheet-chat .chat-panel-header {
+    flex: 0 0 auto;
+    padding: 9px 15px;
+  }
+
+  .mobile-sheet-chat .chat-messages {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-sheet-chat .chat-form {
+    flex: 0 0 auto;
+    padding: 10px 13px max(13px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-sheet-chat .chat-form textarea {
+    min-height: 48px;
+    max-height: 96px;
+    resize: none;
+    font-size: 16px;
+  }
+
+  .mobile-sheet-chat .chat-form button {
+    min-height: 43px;
+    font-size: 14px;
+  }
+
+  .mobile-sheet-chat .chat-content { font-size: 13px; }
+  .mobile-sheet-chat .chat-welcome button { font-size: 12px; min-height: 37px; }
+}
+
+@media (max-width: 360px) {
+  .header h1 { font-size: 15px; }
+  .header p { font-size: 9px; max-width: 195px; }
+  .header-stats span { padding: 5px; }
+  .mobile-sheet-top { padding-left: 11px; padding-right: 11px; }
+  .mobile-summary-location strong { font-size: 13px; }
+  .mobile-summary-value strong { font-size: 19px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side-panel { transition: none; }
+}

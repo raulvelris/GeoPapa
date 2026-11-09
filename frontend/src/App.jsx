@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -45,6 +45,75 @@ function App() {
   const [error, setError] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [chatAbierto, setChatAbierto] = useState(false);
+  // Solo se utiliza en celulares. En escritorio se conserva el panel lateral.
+  const [panelMovil, setPanelMovil] = useState("resumen");
+  const [leyendaAbierta, setLeyendaAbierta] = useState(false);
+  const inicioArrastre = useRef(null);
+  const omitirClicTrasArrastre = useRef(false);
+
+  function esPantallaMovil() {
+    return typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 767px)").matches;
+  }
+
+  function seleccionarZona(zona) {
+    setZonaSeleccionada(zona);
+    setBusqueda(String(zona.grid_code));
+    setError("");
+    setPanelMovil("resumen");
+    if (esPantallaMovil()) setChatAbierto(false);
+  }
+
+  function cerrarZona() {
+    setZonaSeleccionada(null);
+    setPanelMovil("resumen");
+    setChatAbierto(false);
+  }
+
+  function activarChat() {
+    if (esPantallaMovil()) {
+      setChatAbierto(true);
+      setPanelMovil("chat");
+    } else {
+      setChatAbierto((abierto) => !abierto);
+    }
+  }
+
+  function alIniciarArrastre(evento) {
+    if (evento.pointerType === "mouse" && evento.button !== 0) return;
+    inicioArrastre.current = evento.clientY;
+    evento.currentTarget.setPointerCapture?.(evento.pointerId);
+  }
+
+  function alTerminarArrastre(evento) {
+    if (inicioArrastre.current === null) return;
+    const desplazamiento = evento.clientY - inicioArrastre.current;
+    inicioArrastre.current = null;
+    if (Math.abs(desplazamiento) < 35) return;
+    // Evita que el clic que sigue al gesto deshaga el cambio de posición.
+    omitirClicTrasArrastre.current = true;
+    if (desplazamiento < 0) {
+      setPanelMovil((actual) =>
+        actual === "resumen" ? "detalles" :
+        actual === "detalles" && chatAbierto ? "chat" : actual
+      );
+    } else {
+      setPanelMovil((actual) =>
+        actual === "chat" ? "detalles" : "resumen"
+      );
+    }
+  }
+
+  function alPulsarAsa() {
+    if (omitirClicTrasArrastre.current) {
+      omitirClicTrasArrastre.current = false;
+      return;
+    }
+    setPanelMovil((actual) =>
+      actual === "chat" ? "detalles" :
+      actual === "resumen" ? "detalles" : "resumen"
+    );
+  }
 
   useEffect(() => {
     async function cargarMapa() {
@@ -87,8 +156,7 @@ function App() {
     );
 
     if (encontrada) {
-      setZonaSeleccionada(encontrada);
-      setError("");
+      seleccionarZona(encontrada);
     } else {
       setError(`No se encontró la zona ${busqueda}.`);
     }
@@ -177,11 +245,7 @@ function App() {
                       fillOpacity: seleccionada ? 0.95 : 0.72,
                     }}
                     eventHandlers={{
-                      click: () => {
-                        setZonaSeleccionada(zona);
-                        setBusqueda(String(zona.grid_code));
-                        setError("");
-                      },
+                      click: () => seleccionarZona(zona),
                     }}
                   >
                     <Tooltip sticky>
@@ -200,7 +264,20 @@ function App() {
               <AjustarMapa zona={zonaSeleccionada} />
             </MapContainer>
 
-            <div className="legend">
+            <button
+              type="button"
+              className="legend-toggle"
+              aria-expanded={leyendaAbierta}
+              aria-controls="leyenda-rendimiento"
+              onClick={() => setLeyendaAbierta((abierta) => !abierta)}
+            >
+              <span aria-hidden="true">▤</span> Leyenda
+            </button>
+
+            <div
+              id="leyenda-rendimiento"
+              className={`legend ${leyendaAbierta ? "legend-open" : ""}`}
+            >
               <strong>Rendimiento estimado</strong>
               <small>t/ha</small>
 
@@ -237,7 +314,52 @@ function App() {
           </div>
         </section>
 
-        <aside className="side-panel">
+        <aside
+          className={`side-panel ${zonaSeleccionada ? `mobile-sheet-${panelMovil}` : "mobile-sheet-empty"}`}
+          aria-label="Información de la zona"
+        >
+          {zonaSeleccionada && (
+            <div className="mobile-sheet-top">
+              <button
+                type="button"
+                className="mobile-sheet-grip"
+                aria-label={
+                  panelMovil === "chat" ? "Volver a los detalles" :
+                  panelMovil === "resumen" ? "Expandir panel de información" :
+                  "Minimizar panel de información"
+                }
+                aria-expanded={panelMovil !== "resumen"}
+                onPointerDown={alIniciarArrastre}
+                onPointerUp={alTerminarArrastre}
+                onPointerCancel={() => { inicioArrastre.current = null; }}
+                onClick={alPulsarAsa}
+              >
+                <span aria-hidden="true" />
+              </button>
+              <div className="mobile-sheet-summary">
+                <div className="mobile-summary-location">
+                  <span>Zona {zonaSeleccionada.grid_code}</span>
+                  <strong>{zonaSeleccionada.departamento} · {zonaSeleccionada.provincia}</strong>
+                </div>
+                <div className="mobile-summary-value">
+                  <strong>{zonaSeleccionada.rendimiento_estimado_t_ha.toFixed(2)}</strong>
+                  <small>t/ha</small>
+                </div>
+                <button
+                  type="button"
+                  className="mobile-summary-close"
+                  onClick={cerrarZona}
+                  aria-label="Cerrar zona seleccionada"
+                >×</button>
+                <button
+                  type="button"
+                  className="mobile-summary-expand"
+                  onClick={() => setPanelMovil("detalles")}
+                >Ver información <span aria-hidden="true">↑</span></button>
+              </div>
+            </div>
+          )}
+          <div className="mobile-sheet-content">
           {!zonaSeleccionada ? (
             <div className="empty-state">
               <div className="empty-icon">⌖</div>
@@ -259,7 +381,7 @@ function App() {
 
                 <button
                   className="close-button"
-                  onClick={() => setZonaSeleccionada(null)}
+                  onClick={cerrarZona}
                 >
                   ×
                 </button>
@@ -319,18 +441,27 @@ function App() {
                 <>
                   <button
                     className="chat-button chat-button-active"
-                    onClick={() => setChatAbierto((actual) => !actual)}
+                    onClick={activarChat}
                   >
-                    {chatAbierto
-                      ? "Cerrar asistente"
-                      : "Consultar esta zona en el asistente"}
+                    <span className="chat-button-label-desktop">
+                      {chatAbierto ? "Cerrar asistente" : "Consultar esta zona en el asistente"}
+                    </span>
+                    <span className="chat-button-label-mobile">Consultar con Gemini</span>
                   </button>
 
                   {chatAbierto && (
-                    <ChatPanel
-                      key={zonaSeleccionada.grid_code}
-                      zona={zonaSeleccionada}
-                    />
+                    <>
+                      <div className="mobile-chat-nav">
+                        <button type="button" onClick={() => setPanelMovil("detalles")}>
+                          <span aria-hidden="true">‹</span> Volver a la zona
+                        </button>
+                        <strong>Asistente Gemini</strong>
+                      </div>
+                      <ChatPanel
+                        key={zonaSeleccionada.grid_code}
+                        zona={zonaSeleccionada}
+                      />
+                    </>
                   )}
                 </>
               ) : (
@@ -345,6 +476,7 @@ function App() {
               )}
             </>
           )}
+          </div>
         </aside>
       </main>
     </div>
