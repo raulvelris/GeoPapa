@@ -10,7 +10,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import "./App.css";
 
-import { obtenerMapa } from "./services/api";
+import { obtenerMapa, asistenteDisponible } from "./services/api";
 import ChatPanel from "./components/ChatPanel";
 
 const CENTRO_PERU = [-9.19, -75.0152];
@@ -57,7 +57,7 @@ function App() {
       } catch (err) {
         console.error(err);
         setError(
-          "No se pudieron cargar las zonas. Verifica que FastAPI esté ejecutándose en el puerto 8000."
+          "No se pudieron cargar las zonas del mapa. Verifica la conexión e inténtalo nuevamente."
         );
       } finally {
         setCargando(false);
@@ -315,20 +315,33 @@ function App() {
                   garantizado.
                 </p>
               </div>
-              <button
-                className="chat-button chat-button-active"
-                onClick={() => setChatAbierto((actual) => !actual)}
-              >
-                {chatAbierto
-                  ? "Cerrar asistente"
-                  : "Consultar esta zona en el asistente"}
-              </button>
+              {asistenteDisponible ? (
+                <>
+                  <button
+                    className="chat-button chat-button-active"
+                    onClick={() => setChatAbierto((actual) => !actual)}
+                  >
+                    {chatAbierto
+                      ? "Cerrar asistente"
+                      : "Consultar esta zona en el asistente"}
+                  </button>
 
-              {chatAbierto && (
-                <ChatPanel
-                  key={zonaSeleccionada.grid_code}
-                  zona={zonaSeleccionada}
-                />
+                  {chatAbierto && (
+                    <ChatPanel
+                      key={zonaSeleccionada.grid_code}
+                      zona={zonaSeleccionada}
+                    />
+                  )}
+                </>
+              ) : (
+                <div className="method-note">
+                  <strong>Asistente geoespacial</strong>
+                  <p>
+                    El mapa está disponible. Para habilitar el asistente
+                    conversacional es necesario publicar FastAPI y configurar
+                    la dirección de su API.
+                  </p>
+                </div>
               )}
             </>
           )}
